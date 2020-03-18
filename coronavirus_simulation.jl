@@ -180,25 +180,57 @@ font = Plots.font("Times New Roman", 20)
     """
     Scatter plot of particles
     """
-    function plot_particles(itr, param, ptcl)
-        x_list = Array{Float64}(undef, param.num_particles)
-        y_list = Array{Float64}(undef, param.num_particles)
+    function plot_particles(itr, param, var, ptcl)
+        x_g = Array{Float64}(undef, var.num_g)
+        y_g = Array{Float64}(undef, var.num_g)
+        x_r = Array{Float64}(undef, var.num_r)
+        y_r = Array{Float64}(undef, var.num_r)
+        x_o = Array{Float64}(undef, var.num_o)
+        y_o = Array{Float64}(undef, var.num_o)
 
         # Extract necessary information
+        count_g, count_r, count_o = 1, 1, 1
         for itr_ptcl = 1:param.num_particles
-            x_list[itr_ptcl] = ptcl[itr_ptcl].pos_x
-            y_list[itr_ptcl] = ptcl[itr_ptcl].pos_y
+            if ptcl[itr_ptcl].status == 'g'  # never-infected
+                x_g[count_g] = ptcl[itr_ptcl].pos_x
+                y_g[count_g] = ptcl[itr_ptcl].pos_y
+                count_g += 1
+            elseif ptcl[itr_ptcl].status == 'r'  # infected
+                x_r[count_r] = ptcl[itr_ptcl].pos_x
+                y_r[count_r] = ptcl[itr_ptcl].pos_y
+                count_r += 1
+            elseif ptcl[itr_ptcl].status == 'o'  # had-infected
+                x_o[count_o] = ptcl[itr_ptcl].pos_x
+                y_o[count_o] = ptcl[itr_ptcl].pos_y
+                count_o += 1
+            end
         end
 
         itr_str = lpad(itr, 4, "0")
         filename = string("fig/itr_", itr_str, ".png")
-        p = scatter(
-            x_list, y_list,
+        p = scatter(  # never-infected
+            x_g, y_g,
+            markercolor = :green,
+            label = "Never infected",
+            markerstrokewidth = 0,
+            markersize = 10)
+        p! = scatter!(  # infected
+            x_r, y_r,
+            markercolor = :red,
+            label = "Infected",
+            markerstrokewidth = 0,
+            markersize = 10)
+        p! = scatter!(  # had-infected
+            x_o, y_o,
             aspect_ratio = 1,
+            markercolor = :orange,
+            label = "Had-infected",
+            markerstrokewidth = 0,
+            markersize = 10,
             xlims = (0.0, param.x_range),
             ylims = (0.0, param.y_range),
-            xaxis = nothing,
-            yaxis = nothing,
+            axis = nothing,
+            size=(960, 960),
             title = string("itr = ", itr))
         savefig(p, filename)
     end
@@ -273,22 +305,14 @@ for itr_ptcl = 1:param.num_particles
 end
 # particles.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
 
-#=
-println("x = ", getfield.(particles, :pos_x))
-println("y = ", getfield.(particles, :pos_y))
-println("status = ", getfield.(particles, :status))
-println("t_ifcn = ", getfield.(particles, :t_ifcn))
-println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
-=#
-
 # ----------------------------------------
 ## Time iteration of infection simulation
 # ----------------------------------------
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
     var.num_g, var.num_r, var.num_o = count_gro(param, particles)
-    Output.plot_particles(itr_time, param, particles)
+    Output.plot_particles(itr_time, param, var, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    println("itr_time = ", itr_time, " status = ", getfield.(particles, :status))
+    println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
 end
