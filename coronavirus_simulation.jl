@@ -193,7 +193,6 @@ Module for plot
 """
 module Output
     using Plots
-    gr()
     font = Plots.font("Times New Roman", 20)
     """
     Scatter plot of particles
@@ -248,9 +247,20 @@ module Output
             xlims = (0.0, param.x_range),
             ylims = (0.0, param.y_range),
             axis = nothing,
-            size=(960, 960),
+            size=(640, 640),
             title = string("itr = ", itr))
-        savefig(p, filename)
+        plot(p)
+        # savefig(p, filename)
+    end
+
+    """
+    Make gif video
+    """
+    function make_gif(param,anim)
+        gif(
+            anim,
+            "fig/particles.gif",
+            fps=10)
     end
 end
 
@@ -263,13 +273,16 @@ end
 using ProgressMeter
 using Distributions
 using Printf
+using Plots
+gr()
 using .ParamVar
 using .TimeMarch:
 set_initial_condition,
 update_particles,
 count_status
 using .Output:
-plot_particles
+plot_particles,
+make_gif
 
 # ----------------------------------------
 ## Set parameters & variables
@@ -295,9 +308,7 @@ param = ParamVar.Parameters(
     recovery_time,infection_chance,
     radius_infection)
 
-num_g = 0
-num_r = 0
-num_o = 0
+num_g, num_r, num_o = 0, 0, 0
 
 ### Declare parameters
 var = ParamVar.Variables(
@@ -321,7 +332,7 @@ set_initial_condition(param, particles)
 ## Time iteration of infection simulation
 # ----------------------------------------
 progress = Progress(param.max_iteration)
-for itr_time = 1:param.max_iteration
+anim = @animate for itr_time = 1:param.max_iteration
     update_particles(param, particles)
     var.num_g, var.num_r, var.num_o = count_status(param, particles)
     plot_particles(itr_time, param, var, particles)
@@ -330,3 +341,9 @@ for itr_time = 1:param.max_iteration
     # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
     next!(progress)
 end
+
+
+# ----------------------------------------
+## Make gif video of simulation
+# ----------------------------------------
+make_gif(param, anim)
