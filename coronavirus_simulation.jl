@@ -81,8 +81,8 @@ using Distributions
             # Loop of infected particles
             for itr_ifcn = 1:length(x_ifcn)
                 r2 = compute_relative_distance(x, y, x_ifcn[itr_ifcn], y_ifcn[itr_ifcn])
-                if param.radius_infection^2 <= r2 && param.infection_chance <= rand(Uniform(0.0, 1.0))
-                    if s == 'b'  # If the particle has never been infected, get infected
+                if param.radius_infection^2 <= r2 && rand(Uniform(0.0, 1.0)) <= param.infection_chance
+                    if s == 'g'  # If the particle has never been infected, get infected
                         s = 'r'
                         t = 0
                         f = true
@@ -142,9 +142,9 @@ y_range = 10.0
 vel_std = 0.1
 
 recovery_time = 3  # 30
-infection_chance = 0.03
+infection_chance = 1.0  # 0.03
 
-radius_infection = 0.5
+radius_infection = 5
 
 ### Declare parameters
 param = ParamVar.Parameters(
@@ -189,7 +189,8 @@ println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
 ## Time iteration of infection simulation
 # ----------------------------------------
 for itr_time = 1:param.max_iteration
-    tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
-    println(tmp_string)
     update_particles(param, particles)
+    # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
+    # println(tmp_string)
+    println("itr_time = ", itr_time, " state = ", getfield.(particles, :state))
 end
