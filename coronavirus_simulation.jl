@@ -350,14 +350,21 @@ set_initial_condition(param, particles)
 # ----------------------------------------
 progress = Progress(param.max_iteration)
 anim = @animate for itr_time = 1:param.max_iteration
+    # Update particle properties
     update_particles(param, particles)
+
+    # Count not-infected, infected & had-infected number of particles
     var.num_g, var.num_r, var.num_o = count_status(param, particles)
+
+    # Plot particles for gif video
     plot_particles(itr_time, param, var, particles)
+
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
     # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
     next!(progress)
-    # Finish is there are no patients any more
+
+    # Finish if there are no infected particles any more
     if var.num_r == 0
         println("\n No patients at itr_time = ", itr_time, " :Exit")
         break
