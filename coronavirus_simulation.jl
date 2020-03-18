@@ -149,7 +149,7 @@ using Distributions
     - Number of infected particles
     - Number of had-infected particles
     """
-    function count_gro(param, ptcl)
+    function count_status(param, ptcl)
         num_g, num_r, num_o = 0, 0, 0
 
         for itr_ptcl = 1:param.num_particles
@@ -247,7 +247,7 @@ using Printf
 using .ParamVar
 using .TimeMarch:
 update_particles,
-count_gro
+count_status
 using .Output
 
 # ----------------------------------------
@@ -310,7 +310,7 @@ end
 # ----------------------------------------
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
-    var.num_g, var.num_r, var.num_o = count_gro(param, particles)
+    var.num_g, var.num_r, var.num_o = count_status(param, particles)
     Output.plot_particles(itr_time, param, var, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
