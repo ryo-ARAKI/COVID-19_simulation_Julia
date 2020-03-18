@@ -46,6 +46,24 @@ Module for simulation
 module TimeMarch
 using Distributions
     """
+    Compute initial condition
+    """
+    function set_initial_condition(param, ptcl)
+        for itr_ptcl = 1:param.num_particles
+            ptcl[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
+            ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
+            ptcl[itr_ptcl].status = 'g'  # Initially not infected
+            if itr_ptcl == 1  # One particle is initially infected
+                ptcl[itr_ptcl].status = 'r'
+            end
+            ptcl[itr_ptcl].t_ifcn = 0
+            ptcl[itr_ptcl].flag_ifcn = false
+        end
+        # ptcl.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
+    end
+
+
+    """
     Compute (squared) relative distance of two particles
     """
     function compute_relative_distance(x1, y1, x2, y2)
@@ -174,9 +192,9 @@ end
 Module for plot
 """
 module Output
-using Plots
-gr()
-font = Plots.font("Times New Roman", 20)
+    using Plots
+    gr()
+    font = Plots.font("Times New Roman", 20)
     """
     Scatter plot of particles
     """
@@ -247,9 +265,11 @@ using Distributions
 using Printf
 using .ParamVar
 using .TimeMarch:
+set_initial_condition,
 update_particles,
 count_status
-using .Output
+using .Output:
+plot_particles
 
 # ----------------------------------------
 ## Set parameters & variables
@@ -294,17 +314,8 @@ end
 # ----------------------------------------
 ## Set initial condition of particles
 # ----------------------------------------
-for itr_ptcl = 1:param.num_particles
-    particles[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
-    particles[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
-    particles[itr_ptcl].status = 'g'  # Initially not infected
-    if itr_ptcl == 1  # One particle is initially infected
-        particles[itr_ptcl].status = 'r'
-    end
-    particles[itr_ptcl].t_ifcn = 0
-    particles[itr_ptcl].flag_ifcn = false
-end
-# particles.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
+set_initial_condition(param, particles)
+
 
 # ----------------------------------------
 ## Time iteration of infection simulation
@@ -313,7 +324,7 @@ progress = Progress(param.max_iteration)
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
     var.num_g, var.num_r, var.num_o = count_status(param, particles)
-    Output.plot_particles(itr_time, param, var, particles)
+    plot_particles(itr_time, param, var, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
     # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
