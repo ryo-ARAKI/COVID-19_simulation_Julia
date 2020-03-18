@@ -26,9 +26,9 @@ module ParamVar
     end
 
     mutable struct Variables
-        num_g::Int64  # Number of never-infected particles
-        num_r::Int64  # Number of infected particles
-        num_o::Int64  # Number of had-infected particles
+        num_not_infected::Int64  # Number of never-infected particles
+        num_infected::Int64  # Number of infected particles
+        num_recovered::Int64  # Number of recovered particles
     end
 
     mutable struct Particle
@@ -182,25 +182,25 @@ using Distributions
     Count number of
     - Number of never-infected particles
     - Number of infected particles
-    - Number of had-infected particles
+    - Number of recovered particles
     """
     function count_status(param, ptcl)
-        num_g, num_r, num_o = 0, 0, 0
+        num_not_infected, num_infected, num_recovered = 0, 0, 0
 
         for itr_ptcl = 1:param.num_particles
             # Count number of particles according to their status
             if ptcl[itr_ptcl].status == 'g'  # never-infected
-                num_g += 1
+                num_not_infected += 1
             elseif ptcl[itr_ptcl].status == 'r'  # infected
-                num_r += 1
-            elseif ptcl[itr_ptcl].status == 'o'  # had-infected
-                num_o += 1
+                num_infected += 1
+            elseif ptcl[itr_ptcl].status == 'o'  # recovered
+                num_recovered += 1
             else
                 throw(DomainError(ptcl[itr_ptcl].status, "status must be 'g', 'r' or 'o'"))
             end
         end
 
-        return num_g, num_r, num_o
+        return num_not_infected, num_infected, num_recovered
     end
 end
 
@@ -215,12 +215,12 @@ module Output
     Scatter plot of particles
     """
     function plot_particles(itr, param, var, ptcl)
-        x_g = Array{Float64}(undef, var.num_g)
-        y_g = Array{Float64}(undef, var.num_g)
-        x_r = Array{Float64}(undef, var.num_r)
-        y_r = Array{Float64}(undef, var.num_r)
-        x_o = Array{Float64}(undef, var.num_o)
-        y_o = Array{Float64}(undef, var.num_o)
+        x_g = Array{Float64}(undef, var.num_not_infected)
+        y_g = Array{Float64}(undef, var.num_not_infected)
+        x_r = Array{Float64}(undef, var.num_infected)
+        y_r = Array{Float64}(undef, var.num_infected)
+        x_o = Array{Float64}(undef, var.num_recovered)
+        y_o = Array{Float64}(undef, var.num_recovered)
 
         # Extract necessary information
         count_g, count_r, count_o = 1, 1, 1
@@ -233,7 +233,7 @@ module Output
                 x_r[count_r] = ptcl[itr_ptcl].pos_x
                 y_r[count_r] = ptcl[itr_ptcl].pos_y
                 count_r += 1
-            elseif ptcl[itr_ptcl].status == 'o'  # had-infected
+            elseif ptcl[itr_ptcl].status == 'o'  # recovered
                 x_o[count_o] = ptcl[itr_ptcl].pos_x
                 y_o[count_o] = ptcl[itr_ptcl].pos_y
                 count_o += 1
@@ -254,11 +254,11 @@ module Output
             label = "Infected",
             markerstrokewidth = 0,
             markersize = 10)
-        p! = scatter!(  # had-infected
+        p! = scatter!(  # recovered
             x_o, y_o,
             aspect_ratio = 1,
             markercolor = :orange,
-            label = "Had-infected",
+            label = "recovered",
             markerstrokewidth = 0,
             markersize = 10,
             xlims = (0.0, param.x_range),
@@ -328,11 +328,11 @@ param = ParamVar.Parameters(
     ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
-num_g, num_r, num_o = 0, 0, 0
+num_not_infected, num_infected, num_recovered = 0, 0, 0
 
 ### Declare variables
 var = ParamVar.Variables(
-    num_g,num_r,num_o)
+    num_not_infected,num_infected,num_recovered)
 
 ### Define array of particle properties
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
@@ -356,19 +356,19 @@ anim = @animate for itr_time = 1:param.max_iteration
     # Update particle properties
     update_particles(param, particles)
 
-    # Count not-infected, infected & had-infected number of particles
-    var.num_g, var.num_r, var.num_o = count_status(param, particles)
+    # Count not-infected, infected & recovered number of particles
+    var.num_not_infected, var.num_infected, var.num_recovered = count_status(param, particles)
 
     # Plot particles for gif video
     plot_particles(itr_time, param, var, particles)
 
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
+    # println("itr_time = ", itr_time, " g = ", var.num_not_infected, " r = ", var.num_infected, " o = ", var.num_recovered)
     next!(progress)
 
     # Finish if there are no infected particles any more
-    if var.num_r == 0
+    if var.num_infected == 0
         println("\n No patients at itr_time = ", itr_time, " :Exit")
         break
     end
