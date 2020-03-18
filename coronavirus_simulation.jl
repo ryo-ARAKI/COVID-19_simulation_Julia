@@ -36,7 +36,7 @@ module ParamVar
         pos_y::Float64
         vel_x::Float64  # Velocity x-component
         vel_y::Float64
-        status::Char  # 'g':never been infected, 'r':infected, 'o':had been infected
+        status::AbstractString  # "not_infected" "infected" or "recovered"
         t_ifcn::Int64  # Infected time
         flag_ifcn::Bool  # Infection
         # Constructor
@@ -60,9 +60,9 @@ using Distributions
             ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
             ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))  # Gaussian distribution
             ptcl[itr_ptcl].vel_y = rand(Normal(param.vel_mean, param.vel_σ))
-            ptcl[itr_ptcl].status = 'g'  # Initially not infected
+            ptcl[itr_ptcl].status = "not_infected"  # Initially not infected
             if itr_ptcl <= num_infected_init  # Some particles are initially infected
-                ptcl[itr_ptcl].status = 'r'
+                ptcl[itr_ptcl].status = "infected"
             end
             ptcl[itr_ptcl].t_ifcn = 0
             ptcl[itr_ptcl].flag_ifcn = false
@@ -108,13 +108,13 @@ using Distributions
             # Recovery from infection
             s = ptcl[itr_ptcl].status
             t = ptcl[itr_ptcl].t_ifcn
-            if s == 'r' && t >= param.recovery_time
-                ptcl[itr_ptcl].status = 'o'  # Hold infection history
+            if s == "infected" && t >= param.recovery_time
+                ptcl[itr_ptcl].status = "recovered"  # Hold infection history
                 ptcl[itr_ptcl].flag_ifcn = true  # Hold infection history
             end
 
             # Store position of infected particles
-            if s == 'r'
+            if s == "infected"
                 append!(x_ifcn, ptcl[itr_ptcl].pos_x)
                 append!(y_ifcn, ptcl[itr_ptcl].pos_y)
                 ptcl[itr_ptcl].t_ifcn += 1
@@ -133,8 +133,8 @@ using Distributions
             for itr_ifcn = 1:length(x_ifcn)
                 r2 = compute_relative_distance(x, y, x_ifcn[itr_ifcn], y_ifcn[itr_ifcn])
                 if r2 < param.radius_infection^2 && rand(Uniform(0.0, 1.0)) <= param.infection_chance
-                    if s == 'g'  # If the particle has never been infected, get infected
-                        s = 'r'
+                    if s == "not_infected"  # If the particle has never been infected, get infected
+                        s = "infected"
                         t = 0
                         f = true
                     end
@@ -180,7 +180,7 @@ using Distributions
 
     """
     Count number of
-    - Number of never-infected particles
+    - Number of not infected particles
     - Number of infected particles
     - Number of recovered particles
     """
@@ -189,14 +189,14 @@ using Distributions
 
         for itr_ptcl = 1:param.num_particles
             # Count number of particles according to their status
-            if ptcl[itr_ptcl].status == 'g'  # never-infected
+            if ptcl[itr_ptcl].status == "not_infected"  # not infected
                 num_not_infected += 1
-            elseif ptcl[itr_ptcl].status == 'r'  # infected
+            elseif ptcl[itr_ptcl].status == "infected"  # infected
                 num_infected += 1
-            elseif ptcl[itr_ptcl].status == 'o'  # recovered
+            elseif ptcl[itr_ptcl].status == "recovered"  # recovered
                 num_recovered += 1
             else
-                throw(DomainError(ptcl[itr_ptcl].status, "status must be 'g', 'r' or 'o'"))
+                throw(DomainError(ptcl[itr_ptcl].status, "status must be 'not_infected', 'infected' or 'recovered'"))
             end
         end
 
@@ -215,43 +215,43 @@ module Output
     Scatter plot of particles
     """
     function plot_particles(itr, param, var, ptcl)
-        x_g = Array{Float64}(undef, var.num_not_infected)
-        y_g = Array{Float64}(undef, var.num_not_infected)
-        x_r = Array{Float64}(undef, var.num_infected)
-        y_r = Array{Float64}(undef, var.num_infected)
-        x_o = Array{Float64}(undef, var.num_recovered)
-        y_o = Array{Float64}(undef, var.num_recovered)
+        x_not_infected = Array{Float64}(undef, var.num_not_infected)
+        y_not_infected = Array{Float64}(undef, var.num_not_infected)
+        x_infected = Array{Float64}(undef, var.num_infected)
+        y_infected = Array{Float64}(undef, var.num_infected)
+        x_recovered = Array{Float64}(undef, var.num_recovered)
+        y_recovered = Array{Float64}(undef, var.num_recovered)
 
         # Extract necessary information
-        count_g, count_r, count_o = 1, 1, 1
+        count_not_infeced, count_infected, count_recovered = 1, 1, 1
         for itr_ptcl = 1:param.num_particles
-            if ptcl[itr_ptcl].status == 'g'  # never-infected
-                x_g[count_g] = ptcl[itr_ptcl].pos_x
-                y_g[count_g] = ptcl[itr_ptcl].pos_y
-                count_g += 1
-            elseif ptcl[itr_ptcl].status == 'r'  # infected
-                x_r[count_r] = ptcl[itr_ptcl].pos_x
-                y_r[count_r] = ptcl[itr_ptcl].pos_y
-                count_r += 1
-            elseif ptcl[itr_ptcl].status == 'o'  # recovered
-                x_o[count_o] = ptcl[itr_ptcl].pos_x
-                y_o[count_o] = ptcl[itr_ptcl].pos_y
-                count_o += 1
+            if ptcl[itr_ptcl].status == "not_infected"
+                x_not_infected[count_not_infeced] = ptcl[itr_ptcl].pos_x
+                y_not_infected[count_not_infeced] = ptcl[itr_ptcl].pos_y
+                count_not_infeced += 1
+            elseif ptcl[itr_ptcl].status == "infected"
+                x_infected[count_infected] = ptcl[itr_ptcl].pos_x
+                y_infected[count_infected] = ptcl[itr_ptcl].pos_y
+                count_infected += 1
+            elseif ptcl[itr_ptcl].status == "recovered"
+                x_recovered[count_recovered] = ptcl[itr_ptcl].pos_x
+                y_recovered[count_recovered] = ptcl[itr_ptcl].pos_y
+                count_recovered += 1
             end
         end
 
         itr_str = lpad(itr, 4, "0")
         filename = string("fig/itr_", itr_str, ".png")
-        p = scatter(  # never-infected
-            x_g, y_g,
+        p = scatter(
+            x_not_infected, y_not_infected,
             markercolor = :green,
-            label = "Never infected")
-        p! = scatter!(  # infected
-            x_r, y_r,
+            label = "Not infected")
+        p! = scatter!(
+            x_infected, y_infected,
             markercolor = :red,
             label = "Infected")
-        p! = scatter!(  # recovered
-            x_o, y_o,
+        p! = scatter!(
+            x_recovered, y_recovered,
             aspect_ratio = 1,
             markercolor = :orange,
             label = "recovered",
