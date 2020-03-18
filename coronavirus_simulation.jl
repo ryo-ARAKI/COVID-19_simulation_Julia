@@ -25,6 +25,10 @@ module ParamVar
         radius_infection::Float64  # Radius of infection-zone
     end
 
+    struct Flags
+        flag_multiple_infection::Bool  # Multiple infection
+    end
+
     mutable struct Variables
         num_not_infected::Int64  # Number of never-infected particles
         num_infected::Int64  # Number of infected particles
@@ -81,6 +85,42 @@ using Distributions
 
 
     """
+    Check whether the particle will be infected or not
+    """
+    function compute_is_infected(
+        infection_chance, flag_multiple_infection,
+        status, past_ifcn
+    )
+        isinfected = false
+
+        if flag_multiple_infection  # Multiple infection is allowed
+
+            if status == "not_infected"  # Not infected in the past
+                # Infection chance criteria
+                if rand(Uniform(0.0, 1.0)) <= infection_chance
+                    isinfected = true
+                end
+            elseif status == "recovered"  # Infected in the past
+                # Infection chance criteria is multiplied by past number of infection
+                if rand(Uniform(0.0, 1.0)) <= infection_chance^(past_ifcn+1)
+                    isinfected = true
+                end
+            end
+
+        else  # Multiple infection is NOT allowed
+
+            # Infection chance & past infection criteria
+            if rand(Uniform(0.0, 1.0)) <= infection_chance && status == "not_infected"
+                isinfected = true
+            end
+
+        end
+
+        return isinfected
+    end
+
+
+    """
     Compute new coordinates of particles ensuring periodic boundary condition
     point ∈ [0, range]
     """
@@ -100,7 +140,7 @@ using Distributions
     """
     Update particle properties
     """
-    function update_particles(param, ptcl)
+    function update_particles(param, flag, ptcl)
         x_ifcn = Array{Float64}(undef, 0)
         y_ifcn = Array{Float64}(undef, 0)
 
@@ -122,22 +162,25 @@ using Distributions
             end
         end
 
-        # Update properties of never-infected particles
+        # Update properties of not_infected and recovered particles
         for itr_ptcl = 1:param.num_particles
             x = ptcl[itr_ptcl].pos_x
             y = ptcl[itr_ptcl].pos_y
             s = ptcl[itr_ptcl].status
             t = ptcl[itr_ptcl].t_ifcn
-            f = ptcl[itr_ptcl].past_ifcn
+            p = ptcl[itr_ptcl].past_ifcn
 
             # Loop of infected particles
             for itr_ifcn = 1:length(x_ifcn)
                 r2 = compute_relative_distance(x, y, x_ifcn[itr_ifcn], y_ifcn[itr_ifcn])
-                if r2 < param.radius_infection^2 && rand(Uniform(0.0, 1.0)) <= param.infection_chance
-                    if s == "not_infected"  # If the particle has never been infected, get infected
+                if r2 < param.radius_infection^2  # Relative distance criteria
+                    isinfected = compute_is_infected(
+                        param.infection_chance, flag.flag_multiple_infection,
+                        s, p)
+                    if isinfected
                         s = "infected"
-                        t = 0
-                        f += 1
+                        t = 0  # Time since infection
+                        p += 1  # Past number of infection
                     end
                 end
             end
@@ -146,7 +189,7 @@ using Distributions
             ptcl[itr_ptcl].pos_y = y
             ptcl[itr_ptcl].status = s
             ptcl[itr_ptcl].t_ifcn = t
-            ptcl[itr_ptcl].past_ifcn = f
+            ptcl[itr_ptcl].past_ifcn = p
         end
 
         # Update position of all particles
@@ -326,6 +369,13 @@ param = ParamVar.Parameters(
     ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
+flag_multiple_infection = true
+
+### Declare flags
+flag = ParamVar.Flags(
+    flag_multiple_infection
+)
+
 num_not_infected, num_infected, num_recovered = 0, 0, 0
 
 ### Declare variables
@@ -352,7 +402,7 @@ set_initial_condition(param, particles)
 progress = Progress(param.max_iteration)
 anim = @animate for itr_time = 1:param.max_iteration
     # Update particle properties
-    update_particles(param, particles)
+    update_particles(param, flag, particles)
 
     # Count not-infected, infected & recovered number of particles
     var.num_not_infected, var.num_infected, var.num_recovered = count_status(param, particles)
@@ -362,7 +412,7 @@ anim = @animate for itr_time = 1:param.max_iteration
 
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    # println("itr_time = ", itr_time, " g = ", var.num_not_infected, " r = ", var.num_infected, " o = ", var.num_recovered)
+    # println("itr_time = ", itr_time, " not infected = ", var.num_not_infected, " infected = ", var.num_infected, " recovered = ", var.num_recovered)
     next!(progress)
 
     # Finish if there are no infected particles any more
