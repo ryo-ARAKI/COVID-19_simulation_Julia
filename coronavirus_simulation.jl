@@ -38,7 +38,7 @@ module ParamVar
         vel_y::Float64
         status::AbstractString  # "not_infected" "infected" or "recovered"
         t_ifcn::Int64  # Infected time
-        flag_ifcn::Bool  # Infection
+        past_ifcn::Int64  # Past infection history
         # Constructor
         Particle() = new()
     end
@@ -63,9 +63,10 @@ using Distributions
             ptcl[itr_ptcl].status = "not_infected"  # Initially not infected
             if itr_ptcl <= num_infected_init  # Some particles are initially infected
                 ptcl[itr_ptcl].status = "infected"
+                ptcl[itr_ptcl].past_ifcn = 1
             end
             ptcl[itr_ptcl].t_ifcn = 0
-            ptcl[itr_ptcl].flag_ifcn = false
+            ptcl[itr_ptcl].past_ifcn = 0
         end
         # ptcl.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
     end
@@ -110,7 +111,7 @@ using Distributions
             t = ptcl[itr_ptcl].t_ifcn
             if s == "infected" && t >= param.recovery_time
                 ptcl[itr_ptcl].status = "recovered"  # Hold infection history
-                ptcl[itr_ptcl].flag_ifcn = true  # Hold infection history
+                ptcl[itr_ptcl].past_ifcn += 1  # Hold infection history
             end
 
             # Store position of infected particles
@@ -127,7 +128,7 @@ using Distributions
             y = ptcl[itr_ptcl].pos_y
             s = ptcl[itr_ptcl].status
             t = ptcl[itr_ptcl].t_ifcn
-            f = ptcl[itr_ptcl].flag_ifcn
+            f = ptcl[itr_ptcl].past_ifcn
 
             # Loop of infected particles
             for itr_ifcn = 1:length(x_ifcn)
@@ -136,7 +137,7 @@ using Distributions
                     if s == "not_infected"  # If the particle has never been infected, get infected
                         s = "infected"
                         t = 0
-                        f = true
+                        f += 1
                     end
                 end
             end
@@ -145,7 +146,7 @@ using Distributions
             ptcl[itr_ptcl].pos_y = y
             ptcl[itr_ptcl].status = s
             ptcl[itr_ptcl].t_ifcn = t
-            ptcl[itr_ptcl].flag_ifcn = f
+            ptcl[itr_ptcl].past_ifcn = f
         end
 
         # Update position of all particles
