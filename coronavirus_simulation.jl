@@ -245,22 +245,16 @@ module Output
         p = scatter(  # never-infected
             x_g, y_g,
             markercolor = :green,
-            label = "Never infected",
-            markerstrokewidth = 0,
-            markersize = 10)
+            label = "Never infected")
         p! = scatter!(  # infected
             x_r, y_r,
             markercolor = :red,
-            label = "Infected",
-            markerstrokewidth = 0,
-            markersize = 10)
+            label = "Infected")
         p! = scatter!(  # recovered
             x_o, y_o,
             aspect_ratio = 1,
             markercolor = :orange,
             label = "recovered",
-            markerstrokewidth = 0,
-            markersize = 10,
             xlims = (0.0, param.x_range),
             ylims = (0.0, param.y_range),
             axis = nothing,
@@ -291,7 +285,10 @@ using ProgressMeter
 using Distributions
 using Printf
 using Plots
-gr()
+gr(
+    markerstrokewidth = 0,
+    markersize = 10
+)
 using .ParamVar
 using .TimeMarch:
 set_initial_condition,
