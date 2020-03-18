@@ -382,7 +382,7 @@ param = ParamVar.Parameters(
     radius_infection)
 
 flag_multiple_infection = true
-flag_infected_isolation = true
+flag_infected_isolation = false
 
 ### Declare flags
 flag = ParamVar.Flags(
