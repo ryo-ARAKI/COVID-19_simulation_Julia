@@ -11,7 +11,7 @@ module ParamVar
         num_particles::Int64  # Number of particles
         max_iteration::Int64  # Total number of time iteration
         #
-        x_range::Float64  # Size of computational domain [-x_range/2, x_range/2]
+        x_range::Float64  # Size of computational domain [0, x_range]
         y_range::Float64
         #
         vel_std::Float64  # Range of particle moving speed
@@ -49,12 +49,12 @@ using Distributions
 
     """
     Compute new coordinates of particles ensuring periodic boundary condition
-    point ∈ [-range/2, range/2]
+    point ∈ [0, range]
     """
     function ensure_periodic_bc(point, range)
-        if point > 0.5*range
+        if point > range
             new_point = point - range
-        elseif point < -0.5*range
+        elseif point < 0.0
             new_point = point + range
         else
             new_point = point
@@ -164,8 +164,8 @@ font = Plots.font("Times New Roman", 20)
         p = scatter(
             x_list, y_list,
             aspect_ratio = 1,
-            xlims = (-0.5*param.x_range, 0.5*param.x_range),
-            ylims = (-0.5*param.y_range, 0.5*param.y_range),
+            xlims = (0.0, param.x_range),
+            ylims = (0.0, param.y_range),
             xaxis = nothing,
             yaxis = nothing,
             title = string("itr = ", itr))
@@ -222,8 +222,8 @@ end
 ## Set initial condition of particles
 # ----------------------------------------
 for itr_ptcl = 1:param.num_particles
-    particles[itr_ptcl].pos_x = rand(Uniform(-0.5*param.x_range, 0.5*param.x_range))
-    particles[itr_ptcl].pos_y = rand(Uniform(-0.5*param.y_range, 0.5*param.y_range))
+    particles[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
+    particles[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
     particles[itr_ptcl].state = 'g'  # Initially not infected
     if itr_ptcl == 1  # One particle is initially infected
         particles[itr_ptcl].state = 'r'
@@ -231,7 +231,7 @@ for itr_ptcl = 1:param.num_particles
     particles[itr_ptcl].t_ifcn = 0
     particles[itr_ptcl].flag_ifcn = false
 end
-# particles.pos_x .= rand(Uniform(-0.5*param.x_range, 0.5*param.x_range))  # ERROR: LoadError: type Array has no field pos_x
+# particles.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
 
 #=
 println("x = ", getfield.(particles, :pos_x))
