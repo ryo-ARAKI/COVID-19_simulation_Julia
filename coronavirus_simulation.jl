@@ -18,6 +18,7 @@ module ParamVar
         vel_σ::Float64  # Standard deviation
         vel_flc::Float64  # Range of fluctuation
         #
+        ratio_infection_init::Float64  # Initial percentage of infected particles
         recovery_time::Int64  # Recovery time
         infection_chance::Float64  # Chance of infection per unit time
         #
@@ -53,13 +54,14 @@ using Distributions
     Compute initial condition
     """
     function set_initial_condition(param, ptcl)
+        num_infected_init = Int64(param.ratio_infection_init * param.num_particles)
         for itr_ptcl = 1:param.num_particles
             ptcl[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
             ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
             ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))
             ptcl[itr_ptcl].vel_y = rand(Normal(param.vel_mean, param.vel_σ))
             ptcl[itr_ptcl].status = 'g'  # Initially not infected
-            if itr_ptcl == 1  # One particle is initially infected
+            if itr_ptcl <= num_infected_init  # Some particles are initially infected
                 ptcl[itr_ptcl].status = 'r'
             end
             ptcl[itr_ptcl].t_ifcn = 0
@@ -312,6 +314,7 @@ vel_mean = 0.01
 vel_σ = 0.01
 vel_flc = 0.3 * vel_mean
 
+ratio_infection_init = 0.03
 recovery_time = 5
 infection_chance = 0.3
 
@@ -322,7 +325,7 @@ param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
     vel_mean,vel_σ,vel_flc,
-    recovery_time,infection_chance,
+    ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
 num_g, num_r, num_o = 0, 0, 0
