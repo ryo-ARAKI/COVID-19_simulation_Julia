@@ -260,7 +260,7 @@ module Output
         gif(
             anim,
             "fig/particles.gif",
-            fps=10)
+            fps=5)
     end
 end
 
@@ -287,18 +287,18 @@ make_gif
 # ----------------------------------------
 ## Set parameters & variables
 # ----------------------------------------
-num_particles = 10  # 100
-max_iteration = 10  # 100
+num_particles = 100
+max_iteration = 100
 
-x_range = 10.0
-y_range = 10.0
+x_range = 1.0
+y_range = 1.0
 
-vel_std = 1.0
+vel_std = 0.03
 
-recovery_time = 3  # 30
-infection_chance = 1.0  # 0.03
+recovery_time = 5
+infection_chance = 0.3
 
-radius_infection = 5
+radius_infection = 0.1
 
 ### Declare parameters
 param = ParamVar.Parameters(
@@ -310,7 +310,7 @@ param = ParamVar.Parameters(
 
 num_g, num_r, num_o = 0, 0, 0
 
-### Declare parameters
+### Declare variables
 var = ParamVar.Variables(
     num_g,num_r,num_o)
 
