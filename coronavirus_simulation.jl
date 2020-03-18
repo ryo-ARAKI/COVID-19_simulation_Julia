@@ -14,7 +14,9 @@ module ParamVar
         x_range::Float64  # Size of computational domain [0, x_range]
         y_range::Float64
         #
-        vel_std::Float64  # Range of particle moving speed
+        vel_mean::Float64  # Average of velocity component
+        vel_σ::Float64  # Standard deviation
+        vel_flc::Float64  # Range of fluctuation
         #
         recovery_time::Int64  # Recovery time
         infection_chance::Float64  # Chance of infection per unit time
@@ -29,8 +31,10 @@ module ParamVar
     end
 
     mutable struct Particle
-        pos_x::Float64
+        pos_x::Float64  # position x-component
         pos_y::Float64
+        vel_x::Float64  # velocity x-component
+        vel_y::Float64
         status::Char  # 'g':never been infected, 'r':infected, 'o':had been infected
         t_ifcn::Int64
         flag_ifcn::Bool
@@ -52,6 +56,8 @@ using Distributions
         for itr_ptcl = 1:param.num_particles
             ptcl[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
             ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
+            ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))
+            ptcl[itr_ptcl].vel_y = rand(Normal(param.vel_mean, param.vel_σ))
             ptcl[itr_ptcl].status = 'g'  # Initially not infected
             if itr_ptcl == 1  # One particle is initially infected
                 ptcl[itr_ptcl].status = 'r'
@@ -144,10 +150,17 @@ using Distributions
         for itr_ptcl = 1:param.num_particles
             x = ptcl[itr_ptcl].pos_x
             y = ptcl[itr_ptcl].pos_y
+            vx = ptcl[itr_ptcl].vel_x
+            vy = ptcl[itr_ptcl].vel_y
 
-            vx = param.vel_std * rand(Uniform(-1.0, 1.0))
-            vy = param.vel_std * rand(Uniform(-1.0, 1.0))
+            # Update velocity
+            vx_flc = param.vel_flc * rand(Uniform(-1.0, 1.0))
+            vy_flc = param.vel_flc * rand(Uniform(-1.0, 1.0))
 
+            vx_new = vx + vx_flc
+            vy_new = vy + vy_flc
+
+            # Update position
             x_new = x + vx
             y_new = y + vy
 
@@ -157,6 +170,8 @@ using Distributions
 
             ptcl[itr_ptcl].pos_x = x_new
             ptcl[itr_ptcl].pos_y = y_new
+            ptcl[itr_ptcl].vel_x = vx_new
+            ptcl[itr_ptcl].vel_y = vy_new
         end
     end
 
@@ -293,7 +308,9 @@ max_iteration = 100
 x_range = 1.0
 y_range = 1.0
 
-vel_std = 0.03
+vel_mean = 0.01
+vel_σ = 0.01
+vel_flc = 0.3 * vel_mean
 
 recovery_time = 5
 infection_chance = 0.3
@@ -304,7 +321,7 @@ radius_infection = 0.1
 param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
-    vel_std,
+    vel_mean,vel_σ,vel_flc,
     recovery_time,infection_chance,
     radius_infection)
 
