@@ -16,6 +16,8 @@ module ParamVar
         #
         recovery_time::Int64  # Recovery time
         infection_chance::Float64  # Chance of infection per unit time
+        #
+        radius_infection::Float64  # Radius of infection-zone
     end
 
     mutable struct Particle
@@ -34,6 +36,13 @@ end
 Module for simulation
 """
 module TimeMarch
+using Distributions
+    """
+    Compute (squared) relative distance of two particles
+    """
+    function compute_relative_distance(x1, y1, x2, y2)
+        return (x1-x2)^2 + (y1-y2)^2
+    end
     """
     Update particle properties
     """
@@ -54,7 +63,34 @@ module TimeMarch
             if s == 'r'
                 append!(x_ifcn, ptcl[itr_ptcl].pos_x)
                 append!(y_ifcn, ptcl[itr_ptcl].pos_y)
+                ptcl[itr_ptcl].t_ifcn += 1
             end
+        end
+
+        # Update properties of never-infected particles
+        for itr_ptcl = 1:param.num_particles
+            x = ptcl[itr_ptcl].pos_x
+            y = ptcl[itr_ptcl].pos_y
+            s = ptcl[itr_ptcl].state
+            t = ptcl[itr_ptcl].t_ifcn
+            f = ptcl[itr_ptcl].flag_ifcn
+
+            # Loop of infected particles
+            for itr_ifcn = 1:length(x_ifcn)
+                r2 = compute_relative_distance(x, y, x_ifcn[itr_ifcn], y_ifcn[itr_ifcn])
+                if param.radius_infection^2 <= r2 && param.infection_chance <= rand(Uniform(0.0, 1.0))
+                    if s == 'b'  # If the particle has never been infected, get infected
+                        s = 'r'
+                        t = 0
+                        f = true
+                    end
+                end
+            end
+            ptcl[itr_ptcl].pos_x = x
+            ptcl[itr_ptcl].pos_y = y
+            ptcl[itr_ptcl].state = s
+            ptcl[itr_ptcl].t_ifcn = t
+            ptcl[itr_ptcl].flag_ifcn = f
         end
 
         println("x_ifcn = ", x_ifcn, " y_ifcn = ", y_ifcn)
@@ -87,11 +123,14 @@ y_range = 10.0
 recovery_time = 3  # 30
 infection_chance = 0.03
 
+radius_infection = 0.5
+
 ### Declare parameters
 param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
-    recovery_time,infection_chance)
+    recovery_time,infection_chance,
+    radius_infection)
 
 ### Define array of particle properties
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
