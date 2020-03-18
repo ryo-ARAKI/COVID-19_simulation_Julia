@@ -116,6 +116,41 @@ using Distributions
 end
 
 
+"""
+Module for plot
+"""
+module Output
+using Plots
+gr()
+font = Plots.font("Times New Roman", 20)
+    """
+    Scatter plot of particles
+    """
+    function plot_particles(itr, param, ptcl)
+        x_list = Array{Float64}(undef, param.num_particles)
+        y_list = Array{Float64}(undef, param.num_particles)
+
+        # Extract necessary information
+        for itr_ptcl = 1:param.num_particles
+            x_list[itr_ptcl] = ptcl[itr_ptcl].pos_x
+            y_list[itr_ptcl] = ptcl[itr_ptcl].pos_y
+        end
+
+        itr_str = lpad(itr, 4, "0")
+        filename = string("fig/itr_", itr_str, ".png")
+        p = scatter(
+            x_list, y_list,
+            aspect_ratio = 1,
+            xlims = (-0.5*param.x_range, 0.5*param.x_range),
+            ylims = (-0.5*param.y_range, 0.5*param.y_range),
+            xaxis = nothing,
+            yaxis = nothing,
+            title = string("itr = ", itr))
+        savefig(p, filename)
+    end
+end
+
+
 # ========================================
 # Main function
 # ========================================
@@ -123,12 +158,10 @@ end
 ## Declare modules
 using Distributions
 using Printf
-using Plots
 using .ParamVar
 using .TimeMarch:
 update_particles
-
-font = Plots.font("Times New Roman", 20)
+using .Output
 
 # ----------------------------------------
 ## Set parameters & variables
@@ -190,6 +223,7 @@ println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
 # ----------------------------------------
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
+    Output.plot_particles(itr_time, param, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
     println("itr_time = ", itr_time, " state = ", getfield.(particles, :state))
