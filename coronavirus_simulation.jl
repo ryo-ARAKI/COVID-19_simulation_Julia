@@ -357,6 +357,11 @@ anim = @animate for itr_time = 1:param.max_iteration
     # println(tmp_string)
     # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
     next!(progress)
+    # Finish is there are no patients any more
+    if var.num_r == 0
+        println("\n No patients at itr_time = ", itr_time, " :Exit")
+        break
+    end
 end
 
 
