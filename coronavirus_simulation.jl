@@ -14,6 +14,8 @@ module ParamVar
         x_range::Float64  # Size of computational domain [-x_range/2, x_range/2]
         y_range::Float64
         #
+        vel_std::Float64  # Range of particle moving speed
+        #
         recovery_time::Int64  # Recovery time
         infection_chance::Float64  # Chance of infection per unit time
         #
@@ -100,8 +102,8 @@ using Distributions
             x = ptcl[itr_ptcl].pos_x
             y = ptcl[itr_ptcl].pos_y
 
-            vx = rand(Uniform(-1.0, 1.0))
-            vy = rand(Uniform(-1.0, 1.0))
+            vx = param.vel_std * rand(Uniform(-1.0, 1.0))
+            vy = param.vel_std * rand(Uniform(-1.0, 1.0))
 
             x_new = x + vx
             y_new = y + vy
@@ -137,6 +139,8 @@ max_iteration = 10  # 100
 x_range = 10.0
 y_range = 10.0
 
+vel_std = 0.1
+
 recovery_time = 3  # 30
 infection_chance = 0.03
 
@@ -146,6 +150,7 @@ radius_infection = 0.5
 param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
+    vel_std,
     recovery_time,infection_chance,
     radius_infection)
 
