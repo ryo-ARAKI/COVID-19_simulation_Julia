@@ -242,6 +242,7 @@ end
 # ========================================
 
 ## Declare modules
+using ProgressMeter
 using Distributions
 using Printf
 using .ParamVar
@@ -308,11 +309,13 @@ end
 # ----------------------------------------
 ## Time iteration of infection simulation
 # ----------------------------------------
+progress = Progress(param.max_iteration)
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
     var.num_g, var.num_r, var.num_o = count_status(param, particles)
     Output.plot_particles(itr_time, param, var, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
+    # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
+    next!(progress)
 end
