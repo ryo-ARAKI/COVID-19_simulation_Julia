@@ -27,6 +27,7 @@ module ParamVar
 
     struct Flags
         flag_multiple_infection::Bool  # Multiple infection
+        flag_infected_isolation::Bool  # Isolation (stop) of infected particle
     end
 
     mutable struct Variables
@@ -112,6 +113,28 @@ using Distributions
 
 
     """
+    Compute updated velocity components
+    """
+    function compute_new_velocity(
+        flag_infected_isolation, vel_flc, status,
+        vx, vy
+    )
+
+        vx_flc = vel_flc * rand(Uniform(-1.0, 1.0))
+        vy_flc = vel_flc * rand(Uniform(-1.0, 1.0))
+
+        vx_new = vx + vx_flc
+        vy_new = vy + vy_flc
+
+        if flag_infected_isolation && status == "infected"
+            vx_new, vy_new = 0.0, 0.0
+        end
+
+        return vx_new, vy_new
+    end
+
+
+    """
     Compute new coordinates of particles ensuring periodic boundary condition
     point ∈ [0, range]
     """
@@ -189,17 +212,16 @@ using Distributions
             y = ptcl[itr_ptcl].pos_y
             vx = ptcl[itr_ptcl].vel_x
             vy = ptcl[itr_ptcl].vel_y
+            s = ptcl[itr_ptcl].status
 
             # Update velocity
-            vx_flc = param.vel_flc * rand(Uniform(-1.0, 1.0))
-            vy_flc = param.vel_flc * rand(Uniform(-1.0, 1.0))
-
-            vx_new = vx + vx_flc
-            vy_new = vy + vy_flc
+            vx_new, vy_new = compute_new_velocity(
+                flag.flag_infected_isolation, param.vel_flc, s,
+                vx, vy)
 
             # Update position
-            x_new = x + vx
-            y_new = y + vy
+            x_new = x + vx_new
+            y_new = y + vy_new
 
             # Ensure periodic boundary condition
             x_new = ensure_periodic_bc(x_new, param.x_range)
@@ -361,10 +383,12 @@ param = ParamVar.Parameters(
     radius_infection)
 
 flag_multiple_infection = true
+flag_infected_isolation = true
 
 ### Declare flags
 flag = ParamVar.Flags(
-    flag_multiple_infection
+    flag_multiple_infection,
+    flag_infected_isolation
 )
 
 num_not_infected, num_infected, num_recovered = 0, 0, 0
