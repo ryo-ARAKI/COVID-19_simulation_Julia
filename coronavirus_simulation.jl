@@ -45,6 +45,25 @@ using Distributions
     function compute_relative_distance(x1, y1, x2, y2)
         return (x1-x2)^2 + (y1-y2)^2
     end
+
+
+    """
+    Compute new coordinates of particles ensuring periodic boundary condition
+    point ∈ [-range/2, range/2]
+    """
+    function ensure_periodic_bc(point, range)
+        if point > 0.5*range
+            new_point = point - range
+        elseif point < -0.5*range
+            new_point = point + range
+        else
+            new_point = point
+        end
+
+        return new_point
+    end
+
+
     """
     Update particle properties
     """
@@ -107,6 +126,10 @@ using Distributions
 
             x_new = x + vx
             y_new = y + vy
+
+            # Ensure periodic boundary condition
+            x_new = ensure_periodic_bc(x_new, param.x_range)
+            y_new = ensure_periodic_bc(y_new, param.y_range)
 
             ptcl[itr_ptcl].pos_x = x_new
             ptcl[itr_ptcl].pos_y = y_new
@@ -172,7 +195,7 @@ max_iteration = 10  # 100
 x_range = 10.0
 y_range = 10.0
 
-vel_std = 0.1
+vel_std = 1.0
 
 recovery_time = 3  # 30
 infection_chance = 1.0  # 0.03
