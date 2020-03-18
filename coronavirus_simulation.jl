@@ -300,16 +300,16 @@ module Output
         filename = string("fig/itr_", itr_str, ".png")
         p = scatter(
             x_not_infected, y_not_infected,
-            markercolor = :green,
+            markercolor = :deepskyblue,
             label = "Not infected")
         p! = scatter!(
             x_infected, y_infected,
-            markercolor = :red,
+            markercolor = :orangered,
             label = "Infected")
         p! = scatter!(
             x_recovered, y_recovered,
             aspect_ratio = 1,
-            markercolor = :orange,
+            markercolor = :gold,
             label = "Recovered",
             xlims = (0.0, param.x_range),
             ylims = (0.0, param.y_range),
