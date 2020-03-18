@@ -124,7 +124,7 @@ using Distributions
             # Loop of infected particles
             for itr_ifcn = 1:length(x_ifcn)
                 r2 = compute_relative_distance(x, y, x_ifcn[itr_ifcn], y_ifcn[itr_ifcn])
-                if param.radius_infection^2 <= r2 && rand(Uniform(0.0, 1.0)) <= param.infection_chance
+                if r2 < param.radius_infection^2 && rand(Uniform(0.0, 1.0)) <= param.infection_chance
                     if s == 'g'  # If the particle has never been infected, get infected
                         s = 'r'
                         t = 0
