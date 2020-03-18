@@ -93,27 +93,18 @@ using Distributions
     )
         isinfected = false
 
+        # Infection chance & past infection criteria
+        if rand(Uniform(0.0, 1.0)) <= infection_chance && status == "not_infected"
+            isinfected = true
+        end
+
         if flag_multiple_infection  # Multiple infection is allowed
-
-            if status == "not_infected"  # Not infected in the past
-                # Infection chance criteria
-                if rand(Uniform(0.0, 1.0)) <= infection_chance
-                    isinfected = true
-                end
-            elseif status == "recovered"  # Infected in the past
-                # Infection chance criteria is multiplied by past number of infection
-                if rand(Uniform(0.0, 1.0)) <= infection_chance^(past_ifcn+1)
+            if status == "recovered"  # Infected in the past
+                # Infection chance criteria is modified by past number of infection
+                if rand(Uniform(0.0, 1.0)) <= infection_chance * (0.5^past_ifcn)
                     isinfected = true
                 end
             end
-
-        else  # Multiple infection is NOT allowed
-
-            # Infection chance & past infection criteria
-            if rand(Uniform(0.0, 1.0)) <= infection_chance && status == "not_infected"
-                isinfected = true
-            end
-
         end
 
         return isinfected
