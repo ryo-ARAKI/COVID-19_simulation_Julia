@@ -59,6 +59,7 @@ using Distributions
                 ptcl[itr_ptcl].state = 'o'  # Hold infection history
                 ptcl[itr_ptcl].flag_ifcn = true  # Hold infection history
             end
+
             # Store position of infected particles
             if s == 'r'
                 append!(x_ifcn, ptcl[itr_ptcl].pos_x)
@@ -86,6 +87,7 @@ using Distributions
                     end
                 end
             end
+
             ptcl[itr_ptcl].pos_x = x
             ptcl[itr_ptcl].pos_y = y
             ptcl[itr_ptcl].state = s
@@ -93,7 +95,21 @@ using Distributions
             ptcl[itr_ptcl].flag_ifcn = f
         end
 
-        println("x_ifcn = ", x_ifcn, " y_ifcn = ", y_ifcn)
+        # Update position of all particles
+        for itr_ptcl = 1:param.num_particles
+            x = ptcl[itr_ptcl].pos_x
+            y = ptcl[itr_ptcl].pos_y
+
+            vx = rand(Uniform(-1.0, 1.0))
+            vy = rand(Uniform(-1.0, 1.0))
+
+            x_new = x + vx
+            y_new = y + vy
+
+            ptcl[itr_ptcl].pos_x = x_new
+            ptcl[itr_ptcl].pos_y = y_new
+        end
+
     end
 end
 
@@ -104,6 +120,7 @@ end
 
 ## Declare modules
 using Distributions
+using Printf
 using Plots
 using .ParamVar
 using .TimeMarch:
@@ -166,9 +183,8 @@ println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
 # ----------------------------------------
 ## Time iteration of infection simulation
 # ----------------------------------------
-println("x = ", particles[1].pos_x)
 for itr_time = 1:param.max_iteration
-    println("itr_time = ", itr_time)
-    println("x = ", particles[1].pos_x)
+    tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
+    println(tmp_string)
     update_particles(param, particles)
 end
