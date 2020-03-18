@@ -22,10 +22,16 @@ module ParamVar
         radius_infection::Float64  # Radius of infection-zone
     end
 
+    mutable struct Variables
+        num_g::Int64  # Number of never-infected particles
+        num_r::Int64  # Number of infected particles
+        num_o::Int64  # Number of had-infected particles
+    end
+
     mutable struct Particle
         pos_x::Float64
         pos_y::Float64
-        state::Char  # 'g':never been infected, 'r':infected, 'o':had been infected
+        status::Char  # 'g':never been infected, 'r':infected, 'o':had been infected
         t_ifcn::Int64
         flag_ifcn::Bool
         # Constructor
@@ -74,10 +80,10 @@ using Distributions
         # Update properties of infected particles
         for itr_ptcl = 1:param.num_particles
             # Recovery from infection
-            s = ptcl[itr_ptcl].state
+            s = ptcl[itr_ptcl].status
             t = ptcl[itr_ptcl].t_ifcn
             if s == 'r' && t >= param.recovery_time
-                ptcl[itr_ptcl].state = 'o'  # Hold infection history
+                ptcl[itr_ptcl].status = 'o'  # Hold infection history
                 ptcl[itr_ptcl].flag_ifcn = true  # Hold infection history
             end
 
@@ -93,7 +99,7 @@ using Distributions
         for itr_ptcl = 1:param.num_particles
             x = ptcl[itr_ptcl].pos_x
             y = ptcl[itr_ptcl].pos_y
-            s = ptcl[itr_ptcl].state
+            s = ptcl[itr_ptcl].status
             t = ptcl[itr_ptcl].t_ifcn
             f = ptcl[itr_ptcl].flag_ifcn
 
@@ -111,7 +117,7 @@ using Distributions
 
             ptcl[itr_ptcl].pos_x = x
             ptcl[itr_ptcl].pos_y = y
-            ptcl[itr_ptcl].state = s
+            ptcl[itr_ptcl].status = s
             ptcl[itr_ptcl].t_ifcn = t
             ptcl[itr_ptcl].flag_ifcn = f
         end
@@ -134,7 +140,32 @@ using Distributions
             ptcl[itr_ptcl].pos_x = x_new
             ptcl[itr_ptcl].pos_y = y_new
         end
+    end
 
+
+    """
+    Count number of
+    - Number of never-infected particles
+    - Number of infected particles
+    - Number of had-infected particles
+    """
+    function count_gro(param, ptcl)
+        num_g, num_r, num_o = 0, 0, 0
+
+        for itr_ptcl = 1:param.num_particles
+            # Count number of particles according to their status
+            if ptcl[itr_ptcl].status == 'g'  # never-infected
+                num_g += 1
+            elseif ptcl[itr_ptcl].status == 'r'  # infected
+                num_r += 1
+            elseif ptcl[itr_ptcl].status == 'o'  # had-infected
+                num_o += 1
+            else
+                throw(DomainError(ptcl[itr_ptcl].status, "status must be 'g', 'r' or 'o'"))
+            end
+        end
+
+        return num_g, num_r, num_o
     end
 end
 
@@ -183,7 +214,8 @@ using Distributions
 using Printf
 using .ParamVar
 using .TimeMarch:
-update_particles
+update_particles,
+count_gro
 using .Output
 
 # ----------------------------------------
@@ -210,6 +242,14 @@ param = ParamVar.Parameters(
     recovery_time,infection_chance,
     radius_infection)
 
+num_g = 0
+num_r = 0
+num_o = 0
+
+### Declare parameters
+var = ParamVar.Variables(
+    num_g,num_r,num_o)
+
 ### Define array of particle properties
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
 for itr_ptcl = 1:param.num_particles
@@ -224,9 +264,9 @@ end
 for itr_ptcl = 1:param.num_particles
     particles[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
     particles[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
-    particles[itr_ptcl].state = 'g'  # Initially not infected
+    particles[itr_ptcl].status = 'g'  # Initially not infected
     if itr_ptcl == 1  # One particle is initially infected
-        particles[itr_ptcl].state = 'r'
+        particles[itr_ptcl].status = 'r'
     end
     particles[itr_ptcl].t_ifcn = 0
     particles[itr_ptcl].flag_ifcn = false
@@ -236,7 +276,7 @@ end
 #=
 println("x = ", getfield.(particles, :pos_x))
 println("y = ", getfield.(particles, :pos_y))
-println("state = ", getfield.(particles, :state))
+println("status = ", getfield.(particles, :status))
 println("t_ifcn = ", getfield.(particles, :t_ifcn))
 println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
 =#
@@ -246,8 +286,9 @@ println("flag_ifcn = ", getfield.(particles, :flag_ifcn))
 # ----------------------------------------
 for itr_time = 1:param.max_iteration
     update_particles(param, particles)
+    var.num_g, var.num_r, var.num_o = count_gro(param, particles)
     Output.plot_particles(itr_time, param, particles)
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    println("itr_time = ", itr_time, " state = ", getfield.(particles, :state))
+    println("itr_time = ", itr_time, " status = ", getfield.(particles, :status))
 end
