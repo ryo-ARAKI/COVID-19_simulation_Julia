@@ -32,13 +32,13 @@ module ParamVar
     end
 
     mutable struct Particle
-        pos_x::Float64  # position x-component
+        pos_x::Float64  # Position x-component
         pos_y::Float64
-        vel_x::Float64  # velocity x-component
+        vel_x::Float64  # Velocity x-component
         vel_y::Float64
         status::Char  # 'g':never been infected, 'r':infected, 'o':had been infected
-        t_ifcn::Int64
-        flag_ifcn::Bool
+        t_ifcn::Int64  # Infected time
+        flag_ifcn::Bool  # Infection
         # Constructor
         Particle() = new()
     end
@@ -56,9 +56,9 @@ using Distributions
     function set_initial_condition(param, ptcl)
         num_infected_init = Int64(param.ratio_infection_init * param.num_particles)
         for itr_ptcl = 1:param.num_particles
-            ptcl[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))
+            ptcl[itr_ptcl].pos_x = rand(Uniform(0.0, param.x_range))  # Uniform distribution
             ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
-            ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))
+            ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))  # Gaussian distribution
             ptcl[itr_ptcl].vel_y = rand(Normal(param.vel_mean, param.vel_σ))
             ptcl[itr_ptcl].status = 'g'  # Initially not infected
             if itr_ptcl <= num_infected_init  # Some particles are initially infected
@@ -353,13 +353,25 @@ set_initial_condition(param, particles)
 # ----------------------------------------
 progress = Progress(param.max_iteration)
 anim = @animate for itr_time = 1:param.max_iteration
+    # Update particle properties
     update_particles(param, particles)
+
+    # Count not-infected, infected & had-infected number of particles
     var.num_g, var.num_r, var.num_o = count_status(param, particles)
+
+    # Plot particles for gif video
     plot_particles(itr_time, param, var, particles)
+
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
     # println("itr_time = ", itr_time, " g = ", var.num_g, " r = ", var.num_r, " o = ", var.num_o)
     next!(progress)
+
+    # Finish if there are no infected particles any more
+    if var.num_r == 0
+        println("\n No patients at itr_time = ", itr_time, " :Exit")
+        break
+    end
 end
 
 
