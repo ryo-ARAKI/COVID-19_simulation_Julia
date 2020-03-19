@@ -4,7 +4,7 @@ COVID-19 spreading simulation, Julia translation of https://github.com/MuAuan/co
 
 <img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/particles.gif" width="400">
 
-<img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/timeseries.png" width="600">
+<img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/timeseries.png" width="500">
 
 ## Model description
 
