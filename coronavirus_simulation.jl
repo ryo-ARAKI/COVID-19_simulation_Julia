@@ -265,8 +265,26 @@ end
 Module for plot
 """
 module Output
+    using Printf
     using Plots
     font = Plots.font("Times New Roman", 20)
+
+    """
+    Stdout simulation condition
+    """
+    function stdout_condition(param, flag)
+        println("#========== Coronavirus spreading simulation ====================")
+        println(@sprintf "num_particles = %i,  max_iteration = %i" param.num_particles param.max_iteration)
+        println(@sprintf "(x, y) = [0.00, %.2f] × [0.00, %.2f]" param.x_range param.y_range)
+        println(@sprintf "vel_mean = %.3f,  vel_σ = %.3f,  vel_flc = %.3f" param.vel_mean param.vel_σ param.vel_flc)
+        println(@sprintf "ratio_infection_init = %.3f" param.ratio_infection_init)
+        println(@sprintf "recovery_time = %i,  infection_chance = %.2f,  radius_infection = %.2f" param.recovery_time param.infection_chance param.radius_infection)
+        println("flag_multiple_infection = ", flag.flag_multiple_infection ? "true" : "false")
+        println("flag_infected_isolation = ", flag.flag_infected_isolation ? "true" : "false")
+        println("#================================================================\n")
+    end
+
+
     """
     Scatter plot of particles
     """
@@ -351,6 +369,7 @@ set_initial_condition,
 update_particles,
 count_status
 using .Output:
+stdout_condition,
 plot_particles,
 make_gif
 
@@ -389,6 +408,9 @@ flag = ParamVar.Flags(
     flag_multiple_infection,
     flag_infected_isolation
 )
+
+### Stdout simulation condition
+stdout_condition(param, flag)
 
 num_not_infected, num_infected, num_recovered = 0, 0, 0
 
