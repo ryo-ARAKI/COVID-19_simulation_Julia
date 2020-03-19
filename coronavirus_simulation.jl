@@ -265,12 +265,35 @@ end
 Module for plot
 """
 module Output
+    using Printf
+    using Base.Filesystem
     using Plots
     font = Plots.font("Times New Roman", 20)
+
+    """
+    Stdout simulation condition
+    """
+    function stdout_condition(param, flag)
+        println("#========== Coronavirus spreading simulation ====================")
+        println(@sprintf "num_particles = %i,  max_iteration = %i" param.num_particles param.max_iteration)
+        println(@sprintf "(x, y) = [0.00, %.2f] × [0.00, %.2f]" param.x_range param.y_range)
+        println(@sprintf "vel_mean = %.3f,  vel_σ = %.3f,  vel_flc = %.3f" param.vel_mean param.vel_σ param.vel_flc)
+        println(@sprintf "ratio_infection_init = %.3f" param.ratio_infection_init)
+        println(@sprintf "recovery_time = %i,  infection_chance = %.2f,  radius_infection = %.2f" param.recovery_time param.infection_chance param.radius_infection)
+        println("flag_multiple_infection = ", flag.flag_multiple_infection ? "true" : "false")
+        println("flag_infected_isolation = ", flag.flag_infected_isolation ? "true" : "false")
+        println("#================================================================\n")
+
+        out_dir = @sprintf "dat/np=%i_vm=%.3f_vσ=%.3f_vf=%.3f_rii=%i_rt=%i_ic=%.2f_ri=%.2f_fmi=%d_fii=%d/" param.num_particles param.vel_mean param.vel_σ param.vel_flc param.ratio_infection_init param.recovery_time param.infection_chance param.radius_infection flag.flag_multiple_infection flag.flag_infected_isolation
+        mkpath(out_dir)
+        return out_dir
+    end
+
+
     """
     Scatter plot of particles
     """
-    function plot_particles(itr, param, var, ptcl)
+    function plot_particles(itr, param, var, out_dir, ptcl)
         x_not_infected = Array{Float64}(undef, var.num_not_infected)
         y_not_infected = Array{Float64}(undef, var.num_not_infected)
         x_infected = Array{Float64}(undef, var.num_infected)
@@ -297,7 +320,7 @@ module Output
         end
 
         itr_str = lpad(itr, 4, "0")
-        filename = string("fig/itr_", itr_str, ".png")
+        filename = string(out_dir, "itr_", itr_str, ".png")
         p = scatter(
             x_not_infected, y_not_infected,
             markercolor = :deepskyblue,
@@ -323,10 +346,10 @@ module Output
     """
     Make gif video
     """
-    function make_gif(param,anim)
+    function make_gif(param, anim, out_dir)
         gif(
             anim,
-            "fig/particles.gif",
+            string(out_dir, "particles.gif"),
             fps=5)
     end
 end
@@ -351,6 +374,7 @@ set_initial_condition,
 update_particles,
 count_status
 using .Output:
+stdout_condition,
 plot_particles,
 make_gif
 
@@ -390,6 +414,9 @@ flag = ParamVar.Flags(
     flag_infected_isolation
 )
 
+### Stdout simulation condition & define output directory name
+out_dir = stdout_condition(param, flag)
+
 num_not_infected, num_infected, num_recovered = 0, 0, 0
 
 ### Declare variables
@@ -422,7 +449,7 @@ anim = @animate for itr_time = 1:param.max_iteration
     var.num_not_infected, var.num_infected, var.num_recovered = count_status(param, particles)
 
     # Plot particles for gif video
-    plot_particles(itr_time, param, var, particles)
+    plot_particles(itr_time, param, var, out_dir, particles)
 
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
@@ -440,4 +467,4 @@ end
 # ----------------------------------------
 ## Make gif video of simulation
 # ----------------------------------------
-make_gif(param, anim)
+make_gif(param, anim, out_dir)
