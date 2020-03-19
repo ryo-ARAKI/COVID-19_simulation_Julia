@@ -240,7 +240,7 @@ using Distributions
     - infected particles
     - recovered particles
     """
-    function count_status(param, ptcl, num_snapshot, num_timeseries)
+    function count_status(param, ptcl, num_snapshot)
         num_not_infected, num_infected, num_recovered = 0, 0, 0
 
         for itr_ptcl = 1:param.num_particles
@@ -260,9 +260,6 @@ using Distributions
         num_snapshot.not_infected = num_not_infected
         num_snapshot.infected = num_infected
         num_snapshot.recovered = num_recovered
-
-        # Add timeseries data
-        push!(num_timeseries, num_snapshot)
     end
 end
 
@@ -371,7 +368,7 @@ module Output
     function plot_num_timeseries(param, num_timeseries, out_dir)
         filename = string(out_dir, "timeseries.png")
 
-        # Array of struct -> struct  #####POSSIBLE BETTER SOLUTION?#####
+        # Array of struct -> array  #####POSSIBLE BETTER SOLUTION?#####
         tseries = Array{Int64}(undef, length(num_timeseries), 3)
         for itr_time = 1:length(num_timeseries)
             tseries[itr_time, 1] = num_timeseries[itr_time].recovered  # Order is altered for visualisation
@@ -490,7 +487,10 @@ anim = @animate for itr_time = 1:param.max_iteration
     update_particles(param, flag, particles)
 
     # Count not-infected, infected & recovered number of particles
-    count_status(param, particles, num_snapshot, num_timeseries)
+    count_status(param, particles, num_snapshot)
+    # Add timeseries data
+    push!(num_timeseries, ParamVar.NumSnapshot(num_snapshot.not_infected, num_snapshot.infected, num_snapshot.recovered))
+    # push!(num_timeseries, num_snapshot)  # Overwrite past data
 
     # Plot particles for gif video
     plot_particles(itr_time, param, num_snapshot, out_dir, particles)
