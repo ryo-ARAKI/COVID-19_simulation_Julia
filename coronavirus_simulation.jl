@@ -383,6 +383,8 @@ make_gif
 # ----------------------------------------
 ## Set parameters & variables
 # ----------------------------------------
+
+### Declare parameters
 num_particles = 100
 max_iteration = 100
 
@@ -399,7 +401,6 @@ infection_chance = 0.3
 
 radius_infection = 0.1
 
-### Declare parameters
 param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
@@ -407,10 +408,10 @@ param = ParamVar.Parameters(
     ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
+### Declare flags
 flag_multiple_infection = true
 flag_infected_isolation = false
 
-### Declare flags
 flag = ParamVar.Flags(
     flag_multiple_infection,
     flag_infected_isolation
@@ -426,9 +427,9 @@ for itr_ptcl = 1:param.num_particles
 end
 # particles .= ParamVar.Particle()  # ERROR: LoadError: MethodError: no method matching length(::Main.ParamVar.Particle)
 
+### Define array of number of not_infected/infected/recovered particle in a snapshot
 not_infected, infected, recovered = 0, 0, 0
 
-### Define array of number of not_infected/infected/recovered particle in a snapshot
 num_snapshot = ParamVar.NumSnapshot(
     not_infected, infected, recovered)
 
