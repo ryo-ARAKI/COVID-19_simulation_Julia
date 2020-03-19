@@ -19,11 +19,7 @@ COVID-19 spreading simulation, Julia translation of https://github.com/MuAuan/co
 ### Flag
 
 - `flag_multiple_infection` allows recovered particles to re-infect the virus.
-  - In the case of multiple infection, `infection_chance` is modified as follows.
-
-```math
-  \textrm{multiple infection chance} = \textrm{infection chance} \times 0.5^\textrm{number of past infection}
-```
+  - In the case of multiple infection, `infection_chance` is modified by number of past infection.
 
 - `flag_infected_isolation` forces infected particles to stop their movement during infection.
 
