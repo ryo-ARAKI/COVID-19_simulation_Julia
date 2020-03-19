@@ -417,10 +417,8 @@ make_gif,
 plot_num_timeseries
 
 # ----------------------------------------
-## Set parameters & variables
+## Declare parameters
 # ----------------------------------------
-
-### Declare parameters
 num_particles = 100
 max_iteration = 100
 
@@ -444,7 +442,9 @@ param = ParamVar.Parameters(
     ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
-### Declare flags
+# ----------------------------------------
+## Declare flags
+# ----------------------------------------
 flag_multiple_infection = true
 flag_infected_isolation = false
 
@@ -453,23 +453,31 @@ flag = ParamVar.Flags(
     flag_infected_isolation
 )
 
-### Stdout simulation condition & define output directory name
+# ----------------------------------------
+## Stdout simulation condition
+## & define output directory name
+# ----------------------------------------
 out_dir = stdout_condition(param, flag)
 
-### Define array of particle properties
+# ----------------------------------------
+## Define array of particle properties
+# ----------------------------------------
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
 for itr_ptcl = 1:param.num_particles
     particles[itr_ptcl] = ParamVar.Particle()
 end
 # particles .= ParamVar.Particle()  # ERROR: LoadError: MethodError: no method matching length(::Main.ParamVar.Particle)
 
-### Define array of number of not_infected/infected/recovered particle in a snapshot
+# ----------------------------------------
+## Define array of number of
+## not_infected/infected/recovered
+## particle in a snapshot & its timeseries
+# ----------------------------------------
 not_infected, infected, recovered = 0, 0, 0
 
 num_snapshot = ParamVar.NumSnapshot(
     not_infected, infected, recovered)
 
-### Define array of number of not_infected/infected/recovered particle in a timeseries
 num_timeseries = Array{ParamVar.NumSnapshot}(undef, 0)  # push! in temporal iteration
 
 # ----------------------------------------
@@ -488,7 +496,8 @@ anim = @animate for itr_time = 1:param.max_iteration
 
     # Count not-infected, infected & recovered number of particles
     count_status(param, particles, num_snapshot)
-    # Add timeseries data
+
+    # append snapshot values to timeseries
     push!(num_timeseries, ParamVar.NumSnapshot(num_snapshot.not_infected, num_snapshot.infected, num_snapshot.recovered))
     # push!(num_timeseries, num_snapshot)  # Overwrite past data
 
