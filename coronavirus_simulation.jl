@@ -30,10 +30,10 @@ module ParamVar
         flag_infected_isolation::Bool  # Isolation (stop) of infected particle
     end
 
-    mutable struct Variables
-        num_not_infected::Int64  # Number of never-infected particles
-        num_infected::Int64  # Number of infected particles
-        num_recovered::Int64  # Number of recovered particles
+    mutable struct NumSnapshot
+        not_infected::Int64  # Number of never-infected particles
+        infected::Int64  # Number of infected particles
+        recovered::Int64  # Number of recovered particles
     end
 
     mutable struct Particle
@@ -240,7 +240,7 @@ using Distributions
     - infected particles
     - recovered particles
     """
-    function count_status(param, ptcl)
+    function count_status(param, ptcl, num_snapshot)
         num_not_infected, num_infected, num_recovered = 0, 0, 0
 
         for itr_ptcl = 1:param.num_particles
@@ -256,7 +256,9 @@ using Distributions
             end
         end
 
-        return num_not_infected, num_infected, num_recovered
+        num_snapshot.not_infected = num_not_infected
+        num_snapshot.infected = num_infected
+        num_snapshot.recovered = num_recovered
     end
 end
 
@@ -293,13 +295,13 @@ module Output
     """
     Scatter plot of particles
     """
-    function plot_particles(itr, param, var, out_dir, ptcl)
-        x_not_infected = Array{Float64}(undef, var.num_not_infected)
-        y_not_infected = Array{Float64}(undef, var.num_not_infected)
-        x_infected = Array{Float64}(undef, var.num_infected)
-        y_infected = Array{Float64}(undef, var.num_infected)
-        x_recovered = Array{Float64}(undef, var.num_recovered)
-        y_recovered = Array{Float64}(undef, var.num_recovered)
+    function plot_particles(itr, param, num_snapshot, out_dir, ptcl)
+        x_not_infected = Array{Float64}(undef, num_snapshot.not_infected)
+        y_not_infected = Array{Float64}(undef, num_snapshot.not_infected)
+        x_infected = Array{Float64}(undef, num_snapshot.infected)
+        y_infected = Array{Float64}(undef, num_snapshot.infected)
+        x_recovered = Array{Float64}(undef, num_snapshot.recovered)
+        y_recovered = Array{Float64}(undef, num_snapshot.recovered)
 
         # Extract necessary information
         count_not_infeced, count_infected, count_recovered = 1, 1, 1
@@ -417,11 +419,11 @@ flag = ParamVar.Flags(
 ### Stdout simulation condition & define output directory name
 out_dir = stdout_condition(param, flag)
 
-num_not_infected, num_infected, num_recovered = 0, 0, 0
+not_infected, infected, recovered = 0, 0, 0
 
-### Declare variables
-var = ParamVar.Variables(
-    num_not_infected,num_infected,num_recovered)
+### Define array of number of not_infected/infected/recovered particle in a snapshot
+num_snapshot = ParamVar.NumSnapshot(
+    not_infected, infected, recovered)
 
 ### Define array of particle properties
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
@@ -446,18 +448,18 @@ anim = @animate for itr_time = 1:param.max_iteration
     update_particles(param, flag, particles)
 
     # Count not-infected, infected & recovered number of particles
-    var.num_not_infected, var.num_infected, var.num_recovered = count_status(param, particles)
+    count_status(param, particles, num_snapshot)
 
     # Plot particles for gif video
-    plot_particles(itr_time, param, var, out_dir, particles)
+    plot_particles(itr_time, param, num_snapshot, out_dir, particles)
 
     # tmp_string = @sprintf "itr_time = %i x[1] = %6.3f y[1] = %6.3f" itr_time particles[1].pos_x particles[1].pos_y
     # println(tmp_string)
-    # println("itr_time = ", itr_time, " not infected = ", var.num_not_infected, " infected = ", var.num_infected, " recovered = ", var.num_recovered)
+    # println("itr_time = ", itr_time, " not infected = ", num_snapshot.not_infected, " infected = ", num_snapshot.infected, " recovered = ", num_snapshot.recovered)
     next!(progress)
 
     # Finish if there are no infected particles any more
-    if var.num_infected == 0
+    if num_snapshot.infected == 0
         println("\n No patients at itr_time = ", itr_time, " :Exit")
         break
     end
