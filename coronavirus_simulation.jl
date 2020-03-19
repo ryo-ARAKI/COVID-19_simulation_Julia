@@ -30,12 +30,6 @@ module ParamVar
         flag_infected_isolation::Bool  # Isolation (stop) of infected particle
     end
 
-    mutable struct NumSnapshot
-        not_infected::Int64  # Number of never-infected particles
-        infected::Int64  # Number of infected particles
-        recovered::Int64  # Number of recovered particles
-    end
-
     mutable struct Particle
         pos_x::Float64  # Position x-component
         pos_y::Float64
@@ -46,6 +40,12 @@ module ParamVar
         past_ifcn::Int64  # Past infection history
         # Constructor
         Particle() = new()
+    end
+
+    mutable struct NumSnapshot
+        not_infected::Int64  # Number of never-infected particles
+        infected::Int64  # Number of infected particles
+        recovered::Int64  # Number of recovered particles
     end
 end
 
@@ -256,6 +256,7 @@ using Distributions
             end
         end
 
+        # Define mutable construct num_snapshot
         num_snapshot.not_infected = num_not_infected
         num_snapshot.infected = num_infected
         num_snapshot.recovered = num_recovered
@@ -270,6 +271,7 @@ module Output
     using Printf
     using Base.Filesystem
     using Plots
+    using StatsPlots
     font = Plots.font("Times New Roman", 20)
 
     """
@@ -345,6 +347,7 @@ module Output
         # savefig(p, filename)
     end
 
+
     """
     Make gif video
     """
@@ -354,6 +357,38 @@ module Output
             string(out_dir, "particles.gif"),
             fps=5)
     end
+
+    """
+    Plot number of
+    - Not infected
+    - Infected
+    - Recovered
+    particle as timeseries
+    """
+    function plot_num_timeseries(param, num_timeseries, out_dir)
+        filename = string(out_dir, "timeseries.png")
+
+        # Array of struct -> array  #####POSSIBLE BETTER SOLUTION?#####
+        tseries = Array{Int64}(undef, length(num_timeseries), 3)
+        for itr_time = 1:length(num_timeseries)
+            tseries[itr_time, 1] = num_timeseries[itr_time].recovered  # Order is altered for visualisation
+            tseries[itr_time, 2] = num_timeseries[itr_time].infected
+            tseries[itr_time, 3] = num_timeseries[itr_time].not_infected
+        end
+
+        p = groupedbar(
+            tseries,
+            bar_position=:stack,
+            bar_width=0.7,
+            color = [:gold :orangered :deepskyblue],
+            label = ["Recovered" "Infected" "Not_infected"],
+            xaxis = ("Time step"),
+            yaxis = ("Number of particles"),
+            size=(960, 640),
+            )
+        savefig(p, filename)
+    end
+
 end
 
 
@@ -378,10 +413,11 @@ count_status
 using .Output:
 stdout_condition,
 plot_particles,
-make_gif
+make_gif,
+plot_num_timeseries
 
 # ----------------------------------------
-## Set parameters & variables
+## Declare parameters
 # ----------------------------------------
 num_particles = 100
 max_iteration = 100
@@ -399,7 +435,6 @@ infection_chance = 0.3
 
 radius_infection = 0.1
 
-### Declare parameters
 param = ParamVar.Parameters(
     num_particles,max_iteration,
     x_range,y_range,
@@ -407,31 +442,43 @@ param = ParamVar.Parameters(
     ratio_infection_init,recovery_time,infection_chance,
     radius_infection)
 
+# ----------------------------------------
+## Declare flags
+# ----------------------------------------
 flag_multiple_infection = true
 flag_infected_isolation = false
 
-### Declare flags
 flag = ParamVar.Flags(
     flag_multiple_infection,
     flag_infected_isolation
 )
 
-### Stdout simulation condition & define output directory name
+# ----------------------------------------
+## Stdout simulation condition
+## & define output directory name
+# ----------------------------------------
 out_dir = stdout_condition(param, flag)
 
-not_infected, infected, recovered = 0, 0, 0
-
-### Define array of number of not_infected/infected/recovered particle in a snapshot
-num_snapshot = ParamVar.NumSnapshot(
-    not_infected, infected, recovered)
-
-### Define array of particle properties
+# ----------------------------------------
+## Define array of particle properties
+# ----------------------------------------
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
 for itr_ptcl = 1:param.num_particles
     particles[itr_ptcl] = ParamVar.Particle()
 end
 # particles .= ParamVar.Particle()  # ERROR: LoadError: MethodError: no method matching length(::Main.ParamVar.Particle)
 
+# ----------------------------------------
+## Define array of number of
+## not_infected/infected/recovered
+## particle in a snapshot & its timeseries
+# ----------------------------------------
+not_infected, infected, recovered = 0, 0, 0
+
+num_snapshot = ParamVar.NumSnapshot(
+    not_infected, infected, recovered)
+
+num_timeseries = Array{ParamVar.NumSnapshot}(undef, 0)  # push! in temporal iteration
 
 # ----------------------------------------
 ## Set initial condition of particles
@@ -449,6 +496,10 @@ anim = @animate for itr_time = 1:param.max_iteration
 
     # Count not-infected, infected & recovered number of particles
     count_status(param, particles, num_snapshot)
+
+    # append snapshot values to timeseries
+    push!(num_timeseries, ParamVar.NumSnapshot(num_snapshot.not_infected, num_snapshot.infected, num_snapshot.recovered))
+    # push!(num_timeseries, num_snapshot)  # Overwrite past data
 
     # Plot particles for gif video
     plot_particles(itr_time, param, num_snapshot, out_dir, particles)
@@ -470,3 +521,8 @@ end
 ## Make gif video of simulation
 # ----------------------------------------
 make_gif(param, anim, out_dir)
+
+# ----------------------------------------
+## Make figure of timeseries
+# ----------------------------------------
+plot_num_timeseries(param, num_timeseries, out_dir)
