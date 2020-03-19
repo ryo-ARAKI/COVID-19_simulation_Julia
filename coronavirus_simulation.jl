@@ -274,6 +274,7 @@ module Output
     using Printf
     using Base.Filesystem
     using Plots
+    using StatsPlots
     font = Plots.font("Times New Roman", 20)
 
     """
@@ -349,6 +350,7 @@ module Output
         # savefig(p, filename)
     end
 
+
     """
     Make gif video
     """
@@ -358,6 +360,38 @@ module Output
             string(out_dir, "particles.gif"),
             fps=5)
     end
+
+    """
+    Plot number of
+    - Not infected
+    - Infected
+    - Recovered
+    particle as timeseries
+    """
+    function plot_num_timeseries(param, num_timeseries, out_dir)
+        filename = string(out_dir, "timeseries.png")
+
+        # Array of struct -> struct  #####POSSIBLE BETTER SOLUTION?#####
+        tseries = Array{Int64}(undef, length(num_timeseries), 3)
+        for itr_time = 1:length(num_timeseries)
+            tseries[itr_time, 1] = num_timeseries[itr_time].recovered  # Order is altered for visualisation
+            tseries[itr_time, 2] = num_timeseries[itr_time].infected
+            tseries[itr_time, 3] = num_timeseries[itr_time].not_infected
+        end
+
+        p = groupedbar(
+            tseries,
+            bar_position=:stack,
+            bar_width=0.7,
+            color = [:gold :orangered :deepskyblue],
+            label = ["Recovered" "Infected" "Not_infected"],
+            xaxis = ("Time step"),
+            yaxis = ("Number of particles"),
+            size=(960, 640),
+            )
+        savefig(p, filename)
+    end
+
 end
 
 
@@ -382,7 +416,8 @@ count_status
 using .Output:
 stdout_condition,
 plot_particles,
-make_gif
+make_gif,
+plot_num_timeseries
 
 # ----------------------------------------
 ## Set parameters & variables
@@ -477,3 +512,8 @@ end
 ## Make gif video of simulation
 # ----------------------------------------
 make_gif(param, anim, out_dir)
+
+# ----------------------------------------
+## Make figure of timeseries
+# ----------------------------------------
+plot_num_timeseries(param, num_timeseries, out_dir)
