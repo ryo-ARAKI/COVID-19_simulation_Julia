@@ -2,9 +2,11 @@
 
 COVID-19 spreading simulation, Julia translation of https://github.com/MuAuan/collective_particles with several changes and new functionalities.
 
-<img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/particles.gif?token=AG4EYW5XBMYESR2F3QGERGS6PMZSA" width="400">
+<img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/particles.gif" width="400"> <img src="https://raw.githubusercontent.com/ryo-ARAKI/COVID-19_simulation_Julia/demo/gif/timeseries.png" width="450">
 
 ## Model description
+
+### Parameter
 
 - `num_particles` particles are simulated over `max_iteration` temporal iteration.
 - Computational domain is `[0, x_range]` × `[0, y_range]`.
@@ -13,6 +15,17 @@ COVID-19 spreading simulation, Julia translation of https://github.com/MuAuan/co
 - Particles in the nearby (below relative distance `radius_infection`) of the infected particle can be infected by the chance rate `infection_chance` per time step.
 - Infected particles (deterministically) recover after `recovery_time` steps and never infected again.
 - During temporal development, particle velocity alters by up to `vel_flc`.
+
+### Flag
+
+- `flag_multiple_infection` allows recovered particles to re-infect the virus.
+  - In the case of multiple infection, `infection_chance` is modified as follows.
+
+```math
+  \textrm{multiple infection chance} = \textrm{infection chance} \times 0.5^\textrm{number of past infection}
+```
+
+- `flag_infected_isolation` forces infected particles to stop their movement during infection.
 
 ## Execution
 
