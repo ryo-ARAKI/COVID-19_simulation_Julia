@@ -240,7 +240,7 @@ using Distributions
     - infected particles
     - recovered particles
     """
-    function count_status(param, ptcl, num_snapshot)
+    function count_status(param, ptcl, num_snapshot, num_timeseries)
         num_not_infected, num_infected, num_recovered = 0, 0, 0
 
         for itr_ptcl = 1:param.num_particles
@@ -256,9 +256,13 @@ using Distributions
             end
         end
 
+        # Define mutable construct num_snapshot
         num_snapshot.not_infected = num_not_infected
         num_snapshot.infected = num_infected
         num_snapshot.recovered = num_recovered
+
+        # Add timeseries data
+        push!(num_timeseries, num_snapshot)
     end
 end
 
@@ -433,6 +437,8 @@ not_infected, infected, recovered = 0, 0, 0
 num_snapshot = ParamVar.NumSnapshot(
     not_infected, infected, recovered)
 
+### Define array of number of not_infected/infected/recovered particle in a timeseries
+num_timeseries = Array{ParamVar.NumSnapshot}(undef, 0)  # push! in temporal iteration
 
 # ----------------------------------------
 ## Set initial condition of particles
@@ -449,7 +455,7 @@ anim = @animate for itr_time = 1:param.max_iteration
     update_particles(param, flag, particles)
 
     # Count not-infected, infected & recovered number of particles
-    count_status(param, particles, num_snapshot)
+    count_status(param, particles, num_snapshot, num_timeseries)
 
     # Plot particles for gif video
     plot_particles(itr_time, param, num_snapshot, out_dir, particles)
