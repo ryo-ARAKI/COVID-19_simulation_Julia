@@ -30,12 +30,6 @@ module ParamVar
         flag_infected_isolation::Bool  # Isolation (stop) of infected particle
     end
 
-    mutable struct NumSnapshot
-        not_infected::Int64  # Number of never-infected particles
-        infected::Int64  # Number of infected particles
-        recovered::Int64  # Number of recovered particles
-    end
-
     mutable struct Particle
         pos_x::Float64  # Position x-component
         pos_y::Float64
@@ -46,6 +40,12 @@ module ParamVar
         past_ifcn::Int64  # Past infection history
         # Constructor
         Particle() = new()
+    end
+
+    mutable struct NumSnapshot
+        not_infected::Int64  # Number of never-infected particles
+        infected::Int64  # Number of infected particles
+        recovered::Int64  # Number of recovered particles
     end
 end
 
@@ -419,18 +419,18 @@ flag = ParamVar.Flags(
 ### Stdout simulation condition & define output directory name
 out_dir = stdout_condition(param, flag)
 
-not_infected, infected, recovered = 0, 0, 0
-
-### Define array of number of not_infected/infected/recovered particle in a snapshot
-num_snapshot = ParamVar.NumSnapshot(
-    not_infected, infected, recovered)
-
 ### Define array of particle properties
 particles = Array{ParamVar.Particle}(undef, param.num_particles)
 for itr_ptcl = 1:param.num_particles
     particles[itr_ptcl] = ParamVar.Particle()
 end
 # particles .= ParamVar.Particle()  # ERROR: LoadError: MethodError: no method matching length(::Main.ParamVar.Particle)
+
+not_infected, infected, recovered = 0, 0, 0
+
+### Define array of number of not_infected/infected/recovered particle in a snapshot
+num_snapshot = ParamVar.NumSnapshot(
+    not_infected, infected, recovered)
 
 
 # ----------------------------------------
