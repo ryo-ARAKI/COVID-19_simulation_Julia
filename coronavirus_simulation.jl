@@ -65,13 +65,14 @@ using Distributions
             ptcl[itr_ptcl].pos_y = rand(Uniform(0.0, param.y_range))
             ptcl[itr_ptcl].vel_x = rand(Normal(param.vel_mean, param.vel_σ))  # Gaussian distribution
             ptcl[itr_ptcl].vel_y = rand(Normal(param.vel_mean, param.vel_σ))
+            ptcl[itr_ptcl].t_ifcn = 0
+            ptcl[itr_ptcl].past_ifcn = 0
             ptcl[itr_ptcl].status = "not_infected"  # Initially not infected
-            if itr_ptcl <= num_infected_init  # Some particles are initially infected
+            # Some particles are initially infected
+            if itr_ptcl <= num_infected_init
                 ptcl[itr_ptcl].status = "infected"
                 ptcl[itr_ptcl].past_ifcn = 1
             end
-            ptcl[itr_ptcl].t_ifcn = 0
-            ptcl[itr_ptcl].past_ifcn = 0
         end
         # ptcl.pos_x .= rand(Uniform(0.0, param.x_range))  # ERROR: LoadError: type Array has no field pos_x
     end
@@ -199,14 +200,12 @@ using Distributions
                 end
             end
 
-            ptcl[itr_ptcl].pos_x = x
-            ptcl[itr_ptcl].pos_y = y
             ptcl[itr_ptcl].status = s
             ptcl[itr_ptcl].t_ifcn = t
             ptcl[itr_ptcl].past_ifcn = p
         end
 
-        # Update position of all particles
+        # Update position and velocity of all particles
         for itr_ptcl = 1:param.num_particles
             x = ptcl[itr_ptcl].pos_x
             y = ptcl[itr_ptcl].pos_y
@@ -237,9 +236,9 @@ using Distributions
 
     """
     Count number of
-    - Number of not infected particles
-    - Number of infected particles
-    - Number of recovered particles
+    - not infected particles
+    - infected particles
+    - recovered particles
     """
     function count_status(param, ptcl)
         num_not_infected, num_infected, num_recovered = 0, 0, 0
@@ -301,17 +300,17 @@ module Output
         filename = string("fig/itr_", itr_str, ".png")
         p = scatter(
             x_not_infected, y_not_infected,
-            markercolor = :green,
+            markercolor = :deepskyblue,
             label = "Not infected")
         p! = scatter!(
             x_infected, y_infected,
-            markercolor = :red,
+            markercolor = :orangered,
             label = "Infected")
         p! = scatter!(
             x_recovered, y_recovered,
             aspect_ratio = 1,
-            markercolor = :orange,
-            label = "recovered",
+            markercolor = :gold,
+            label = "Recovered",
             xlims = (0.0, param.x_range),
             ylims = (0.0, param.y_range),
             axis = nothing,
@@ -383,7 +382,7 @@ param = ParamVar.Parameters(
     radius_infection)
 
 flag_multiple_infection = true
-flag_infected_isolation = true
+flag_infected_isolation = false
 
 ### Declare flags
 flag = ParamVar.Flags(
